@@ -1,0 +1,14 @@
+{
+  "name": "rodina-helper-proxy",
+  "version": "1.0.0",
+  "description": "Proxy for Rodina Helper feedback",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
