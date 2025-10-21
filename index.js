@@ -1,3 +1,4 @@
+// index.js (для вашего GitHub репозитория)
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -5,21 +6,23 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Разрешаем запросы (в будущем можно ограничить только доменом форума)
 app.use(cors());
 app.use(express.json());
 
-// Наша единственная точка входа
 app.post('/api/feedback', async (req, res) => {
-    // Получаем данные, которые отправило расширение
-    const { webhookUrl, message, attachment, author, pageUrl, scriptVersion } = req.body;
+    // 1. Получаем секретный URL вебхука из переменных окружения Render
+    const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
-    // Проверка безопасности: URL вебхука должен быть передан в запросе
-    if (!webhookUrl) {
-        return res.status(400).json({ success: false, message: 'Webhook URL не был предоставлен.' });
+    // 2. Проверка безопасности на сервере
+    if (!DISCORD_WEBHOOK_URL) {
+        console.error("Критическая ошибка: URL вебхука не настроен на сервере!");
+        return res.status(500).json({ success: false, message: 'Сервер не настроен для приема отчетов.' });
     }
 
-    // Создаем красивое встраиваемое сообщение (embed) для Discord
+    // 3. Получаем данные, которые отправило расширение
+    const { message, attachment, author, pageUrl, scriptVersion } = req.body;
+
+    // 4. Создаем красивое сообщение для Discord
     const embed = {
         color: 0x4299e1, // Синий цвет
         author: {
@@ -29,22 +32,21 @@ app.post('/api/feedback', async (req, res) => {
         description: message,
         fields: [],
         footer: {
-            text: `Rodina Helper v${scriptVersion} | ${new Date().toLocaleString()}`
+            text: `Rodina Helper v${scriptVersion} | ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}`
         }
     };
 
     if (attachment) {
         embed.fields.push({ name: "Вложение", value: attachment, inline: false });
     }
-
     if (pageUrl) {
         embed.fields.push({ name: "Страница", value: pageUrl, inline: false });
     }
 
-    // Отправляем данные на настоящий URL вебхука
+    // 5. Отправляем данные на настоящий URL вебхука, который знает только сервер
     try {
-        await axios.post(webhookUrl, {
-            username: "Rodina Helper Reports", // Имя бота в Discord
+        await axios.post(DISCORD_WEBHOOK_URL, {
+            username: "Rodina Helper Reports",
             embeds: [embed]
         });
         res.status(200).json({ success: true, message: 'Отчет успешно отправлен.' });
@@ -55,5 +57,5 @@ app.post('/api/feedback', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Прокси-сервер запущен на порту ${PORT}`);
+    console.log(`Прокси-сервер Rodina Helper запущен на порту ${PORT}`);
 });
